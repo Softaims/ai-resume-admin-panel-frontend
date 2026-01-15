@@ -1,38 +1,54 @@
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import { useCountStore } from './store/useCountStore'
+import { useState, useEffect } from 'react'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import AdminLayout from './layouts/AdminLayout'
+import Login from './pages/Login'
+import Overview from './pages/Overview'
+import ResumeAnalysis from './pages/ResumeAnalysis'
+import ResumeAnalysisDetails from './pages/ResumeAnalysisDetails'
+import JobAnalysis from './pages/JobAnalysis'
+import JobAnalysisDetails from './pages/JobAnalysisDetails'
 
 function App() {
-  const { count, increment, decrement, reset } = useCountStore()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const navigate = useNavigate()
+
+  // Check for existing auth on mount
+  useEffect(() => {
+    const authStatus = localStorage.getItem('isAuthenticated')
+    if (authStatus === 'true') {
+      setIsAuthenticated(true)
+    }
+  }, [])
+
+  const handleLogin = () => {
+    setIsAuthenticated(true)
+    localStorage.setItem('isAuthenticated', 'true')
+    navigate('/user-overview')
+  }
+
+  const handleLogout = () => {
+    setIsAuthenticated(false)
+    localStorage.removeItem('isAuthenticated')
+    navigate('/login')
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={increment}>
-          count is {count}
-        </button>
-        <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
-          <button onClick={decrement}>Decrement</button>
-          <button onClick={reset}>Reset</button>
-        </div>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Routes>
+      <Route path="/login" element={<Login onLogin={handleLogin} />} />
+      
+      {isAuthenticated ? (
+        <Route element={<AdminLayout onLogout={handleLogout} />}>
+          <Route path="/" element={<Navigate to="/user-overview" replace />} />
+          <Route path="/user-overview" element={<Overview />} />
+          <Route path="/resume-analysis" element={<ResumeAnalysis />} />
+          <Route path="/resume-analysis/:userId" element={<ResumeAnalysisDetails />} />
+          <Route path="/job-analysis" element={<JobAnalysis />} />
+          <Route path="/job-analysis/:userId" element={<JobAnalysisDetails />} />
+        </Route>
+      ) : (
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      )}
+    </Routes>
   )
 }
 
