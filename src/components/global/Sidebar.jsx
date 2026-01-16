@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   X
 } from 'lucide-react'
+import logo from '../../assets/logo.svg'
 
 const menuItems = [
   { id: 'user-overview', label: 'User Overview', icon: Users, path: '/user-overview' },
@@ -38,12 +39,11 @@ function Sidebar({ activeItem, onLogout }) {
         {/* Logo Section */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <div 
-              className="w-10 h-10 rounded-lg flex items-center justify-center" 
-              style={{ background: 'linear-gradient(to bottom right, #2F279C, #766EE4)' }}
-            >
-              <LayoutDashboard className="w-6 h-6 text-white" />
-            </div>
+            <img 
+              src={logo} 
+              alt="AI Resume Builder Logo" 
+              className="h-10 w-auto object-contain"
+            />
             <div>
               <h1 className="text-lg font-bold text-gray-900">AI Resume Builder</h1>
               <p className="text-xs text-gray-500">Admin Panel</p>

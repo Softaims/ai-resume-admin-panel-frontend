@@ -1,151 +1,11 @@
-import { useState } from 'react'
-import { Calendar, ChevronDown, Users } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Calendar, ChevronDown, Users, Search } from 'lucide-react'
+import { mockUserOverviewData } from '../../data/mockUserOverview'
+import { TableSkeleton, TableRowSkeleton } from '../global/Skeleton'
+import EmptyState from '../global/EmptyState'
+import ErrorState from '../global/ErrorState'
 
-const mockUserData = [
-  {
-    id: 'USR001',
-    name: 'Katelyn Anderson',
-    email: 'katelynanderson224@gmail.com',
-    signupDate: '2025-09-15',
-    lastActivityDate: '2026-01-12',
-    totalResumes: 12,
-    generalOptimized: 7,
-    jobOptimized: 5,
-    subscriptionStatus: 'Subscribed',
-  },
-  {
-    id: 'USR002',
-    name: 'Zohaib Ahmad',
-    email: 'zohaib@thesoftaims.com',
-    signupDate: '2025-10-22',
-    lastActivityDate: '2026-01-10',
-    totalResumes: 8,
-    generalOptimized: 4,
-    jobOptimized: 4,
-    subscriptionStatus: 'Non-Subscribed',
-  },
-  {
-    id: 'USR003',
-    name: 'Matthew Gampel',
-    email: 'mattgampel@gmail.com',
-    signupDate: '2025-11-05',
-    lastActivityDate: '2026-01-13',
-    totalResumes: 15,
-    generalOptimized: 10,
-    jobOptimized: 5,
-    subscriptionStatus: 'Subscribed',
-  },
-  {
-    id: 'USR004',
-    name: 'Julien Apeloig, Ph.D.',
-    email: 'japeloig@gmail.com',
-    signupDate: '2025-08-30',
-    lastActivityDate: '2025-11-15',
-    totalResumes: 3,
-    generalOptimized: 2,
-    jobOptimized: 1,
-    subscriptionStatus: 'Non-Subscribed',
-  },
-  {
-    id: 'USR005',
-    name: 'Sarah Johnson',
-    email: 'sarah.j@example.com',
-    signupDate: '2025-12-10',
-    lastActivityDate: '2026-01-11',
-    totalResumes: 20,
-    generalOptimized: 12,
-    jobOptimized: 8,
-    subscriptionStatus: 'Subscribed',
-  },
-  {
-    id: 'USR006',
-    name: 'Michael Chen',
-    email: 'michael.chen@example.com',
-    signupDate: '2025-09-20',
-    lastActivityDate: '2025-12-20',
-    totalResumes: 18,
-    generalOptimized: 11,
-    jobOptimized: 7,
-    subscriptionStatus: 'Subscribed',
-  },
-  {
-    id: 'USR007',
-    name: 'Emily Rodriguez',
-    email: 'emily.r@example.com',
-    signupDate: '2025-10-15',
-    lastActivityDate: '2025-11-10',
-    totalResumes: 6,
-    generalOptimized: 3,
-    jobOptimized: 3,
-    subscriptionStatus: 'Non-Subscribed',
-  },
-  {
-    id: 'USR008',
-    name: 'David Park',
-    email: 'david.park@example.com',
-    signupDate: '2025-11-20',
-    lastActivityDate: '2026-01-09',
-    totalResumes: 14,
-    generalOptimized: 9,
-    jobOptimized: 5,
-    subscriptionStatus: 'Subscribed',
-  },
-  {
-    id: 'USR009',
-    name: 'Lisa Thompson',
-    email: 'lisa.t@example.com',
-    signupDate: '2025-12-01',
-    lastActivityDate: '2026-01-08',
-    totalResumes: 10,
-    generalOptimized: 6,
-    jobOptimized: 4,
-    subscriptionStatus: 'Non-Subscribed',
-  },
-  {
-    id: 'USR010',
-    name: 'James Wilson',
-    email: 'james.w@example.com',
-    signupDate: '2025-08-25',
-    lastActivityDate: '2025-10-30',
-    totalResumes: 22,
-    generalOptimized: 15,
-    jobOptimized: 7,
-    subscriptionStatus: 'Subscribed',
-  },
-  {
-    id: 'USR011',
-    name: 'Anna Martinez',
-    email: 'anna.m@example.com',
-    signupDate: '2026-01-05',
-    lastActivityDate: '2026-01-12',
-    totalResumes: 2,
-    generalOptimized: 1,
-    jobOptimized: 1,
-    subscriptionStatus: 'Non-Subscribed',
-  },
-  {
-    id: 'USR012',
-    name: 'Tom Harris',
-    email: 'tom.h@example.com',
-    signupDate: '2026-01-08',
-    lastActivityDate: '2026-01-13',
-    totalResumes: 3,
-    generalOptimized: 2,
-    jobOptimized: 1,
-    subscriptionStatus: 'Subscribed',
-  },
-  {
-    id: 'USR013',
-    name: 'Jennifer Lee',
-    email: 'jennifer.lee@example.com',
-    signupDate: '2026-01-10',
-    lastActivityDate: '2026-01-14',
-    totalResumes: 1,
-    generalOptimized: 0,
-    jobOptimized: 1,
-    subscriptionStatus: 'Non-Subscribed',
-  },
-]
+const mockUserData = mockUserOverviewData
 
 function Pagination({ currentPage, totalPages, onPageChange, totalItems, itemsPerPage }) {
   const startItem = (currentPage - 1) * itemsPerPage + 1
@@ -224,7 +84,32 @@ function UserOverviewTable() {
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false)
   const [subscriptionFilter, setSubscriptionFilter] = useState('all')
   const [isSubscriptionDropdownOpen, setIsSubscriptionDropdownOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isFiltering, setIsFiltering] = useState(false)
+  const [error, setError] = useState(null)
   const itemsPerPage = 10
+
+  const fetchData = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      // Simulate data fetching
+      // TODO: Replace with actual API call
+      await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve()
+        }, 800)
+      })
+      setIsLoading(false)
+    } catch (err) {
+      setError(err.message || 'An error occurred while loading data')
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   // Generate month options (last 12 months)
   const generateMonthOptions = () => {
@@ -329,6 +214,11 @@ function UserOverviewTable() {
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value)
     setCurrentPage(1)
+    setIsFiltering(true)
+    // Simulate API call delay
+    setTimeout(() => {
+      setIsFiltering(false)
+    }, 500)
   }
 
   const handleTabChange = (tab) => {
@@ -338,18 +228,33 @@ function UserOverviewTable() {
     setTimeRange('7days')
     setMonthFilter('')
     setSubscriptionFilter('all')
+    setIsFiltering(true)
+    // Simulate API call delay
+    setTimeout(() => {
+      setIsFiltering(false)
+    }, 500)
   }
 
   const handleSubscriptionFilterChange = (filter) => {
     setSubscriptionFilter(filter)
     setCurrentPage(1)
     setIsSubscriptionDropdownOpen(false)
+    setIsFiltering(true)
+    // Simulate API call delay
+    setTimeout(() => {
+      setIsFiltering(false)
+    }, 500)
   }
 
   const handleTimeRangeChange = (newTimeRange) => {
     setTimeRange(newTimeRange)
     setMonthFilter('') // Reset month filter when time range changes
     setCurrentPage(1)
+    setIsFiltering(true)
+    // Simulate API call delay
+    setTimeout(() => {
+      setIsFiltering(false)
+    }, 500)
   }
 
   const handleMonthFilterChange = (filter) => {
@@ -357,6 +262,27 @@ function UserOverviewTable() {
     setTimeRange('7days') // Reset time range when month filter changes
     setCurrentPage(1)
     setIsMonthDropdownOpen(false)
+    setIsFiltering(true)
+    // Simulate API call delay
+    setTimeout(() => {
+      setIsFiltering(false)
+    }, 500)
+  }
+
+  if (isLoading) {
+    return <TableSkeleton rows={10} cols={7} />
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+        <ErrorState 
+          title="Failed to load users" 
+          message={error} 
+          onRetry={fetchData}
+        />
+      </div>
+    )
   }
 
   return (
@@ -599,18 +525,21 @@ function UserOverviewTable() {
               <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
                 Subscription Status
               </th>
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                Action
-              </th>
             </tr>
           </thead>
           <tbody>
-            {paginatedUsers.length === 0 ? (
-              <tr>
-                <td colSpan="8" className="text-center py-12">
-                  <p className="text-gray-500">No users found</p>
-                </td>
-              </tr>
+            {isFiltering ? (
+              // Show skeleton rows while filtering
+              Array.from({ length: itemsPerPage }).map((_, i) => (
+                <TableRowSkeleton key={i} cols={7} />
+              ))
+            ) : paginatedUsers.length === 0 ? (
+              <EmptyState
+                icon={Search}
+                title="No users found"
+                message="Try adjusting your search or filter criteria to find users."
+                colSpan={7}
+              />
             ) : (
               paginatedUsers.map((user) => (
                 <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
@@ -646,14 +575,6 @@ function UserOverviewTable() {
                     >
                       {user.subscriptionStatus}
                     </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <button
-                      className="px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-all cursor-pointer hover:opacity-90"
-                      style={{ background: '#2F279C' }}
-                    >
-                      View Details
-                    </button>
                   </td>
                 </tr>
               ))

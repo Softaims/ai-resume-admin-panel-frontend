@@ -1,16 +1,48 @@
+import { useState, useEffect } from 'react'
 import { Users, TrendingUp } from 'lucide-react'
-import SummaryCard from '../components/SummaryCard'
-import PieChart from '../components/PieChart'
-import UserOverviewTable from '../components/UserOverviewTable'
+import SummaryCard from '../components/global/SummaryCard'
+import PieChart from '../components/global/PieChart'
+import UserOverviewTable from '../components/user-overview/UserOverviewTable'
+import { mockSubscriptionData, mockOverviewStats } from '../data/mockOverview'
+import { PageSkeleton } from '../components/global/Skeleton'
+import ErrorState from '../components/global/ErrorState'
 
 function Overview() {
-  const subscriptionData = [
-    { label: 'Subscribed', value: 45, color: '#766EE4' },
-    { label: 'Non-Subscribed', value: 74, color: '#9F97FF' },
-  ]
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const totalUsers = 119
-  const subscribedUsers = 45
+  const fetchData = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      // Simulate data fetching
+      // TODO: Replace with actual API call
+      await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve()
+        }, 1000)
+      })
+      setIsLoading(false)
+    } catch (err) {
+      setError(err.message || 'An error occurred while loading data')
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  if (isLoading) {
+    return <PageSkeleton />
+  }
+
+  if (error) {
+    return <ErrorState title="Failed to load overview" message={error} onRetry={fetchData} />
+  }
+
+  const subscriptionData = mockSubscriptionData
+  const { totalUsers, subscribedUsers } = mockOverviewStats
   const conversionRate = ((subscribedUsers / totalUsers) * 100).toFixed(1)
 
   return (

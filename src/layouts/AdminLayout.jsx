@@ -1,5 +1,5 @@
 import { Outlet, useLocation } from 'react-router-dom'
-import Sidebar from '../components/Sidebar'
+import Sidebar from '../components/global/Sidebar'
 
 function AdminLayout({ onLogout }) {
   const location = useLocation()
@@ -7,17 +7,20 @@ function AdminLayout({ onLogout }) {
   // Map paths to menu item IDs for active state
   const getActiveItem = () => {
     const path = location.pathname
-    switch (path) {
-      case '/user-overview':
-        return 'user-overview'
-      case '/resume-analysis':
+    
+    // Check if path starts with the base routes (handles detail pages too)
+    if (path.startsWith('/resume-analysis')) {
         return 'resume-analysis'
-      case '/job-analysis':
+    }
+    if (path.startsWith('/job-analysis')) {
         return 'job-analysis'
-   
-      default:
+    }
+    if (path.startsWith('/user-overview')) {
         return 'user-overview'
     }
+    
+    // Default fallback
+    return 'user-overview'
   }
 
   return (
