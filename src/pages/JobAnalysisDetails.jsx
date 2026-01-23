@@ -1,60 +1,44 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FileSearch } from 'lucide-react'
-import { mockJobAnalysisData } from '../data/mockJobAnalysis'
 import { DetailPageSkeleton } from '../components/global/Skeleton'
 import ErrorState from '../components/global/ErrorState'
 import DetailPageHeader from '../components/detail-pages/DetailPageHeader'
 import SummaryStatCard from '../components/detail-pages/SummaryStatCard'
 import AnalysisCard from '../components/detail-pages/AnalysisCard'
 import BackButton from '../components/detail-pages/BackButton'
-
-const mockUserData = mockJobAnalysisData
+import useJobAnalysisStore from '../store/jobAnalysisStore'
 
 function JobAnalysisDetails() {
   const { userId } = useParams()
   const navigate = useNavigate()
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
-  
-  const fetchData = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      // Simulate data fetching
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve()
-        }, 1000)
-      })
-      setIsLoading(false)
-    } catch (err) {
-      setError(err.message || 'An error occurred while loading data')
-      setIsLoading(false)
-    }
-  }
+  const {
+    userDetails,
+    isLoadingDetails,
+    detailsError,
+    fetchUserDetails,
+  } = useJobAnalysisStore()
   
   useEffect(() => {
-    fetchData()
-  }, [userId])
-  
-  const user = mockUserData.find(u => u.userId === userId)
-  
-  if (isLoading) {
+    if (userId) {
+      fetchUserDetails(userId, false)
+    }
+  }, [userId, fetchUserDetails])
+
+  if (isLoadingDetails && (!userDetails || userDetails.userId !== userId)) {
     return <DetailPageSkeleton />
   }
 
-  if (error) {
+  if (detailsError) {
     return (
       <div className="space-y-6">
         <BackButton onClick={() => navigate('/job-analysis')} />
-        <ErrorState title="Failed to load details" message={error} onRetry={fetchData} />
+        <ErrorState title="Failed to load details" message={detailsError} onRetry={() => fetchUserDetails(userId)} />
       </div>
     )
   }
   
-  if (!user) {
+  if (!userDetails || userDetails.userId !== userId) {
     return (
       <div className="space-y-6">
         <BackButton onClick={() => navigate('/job-analysis')} />
@@ -65,9 +49,9 @@ function JobAnalysisDetails() {
                 <FileSearch className="w-8 h-8 text-gray-400" />
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">User not found</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">User not found or no analyses</h3>
             <p className="text-sm text-gray-500 max-w-md mb-4 text-center">
-              The requested user could not be found. Please check the user ID and try again.
+              The requested user could not be found or has no job analyses. Please check the user ID and try again.
             </p>
             <button
               onClick={() => navigate('/job-analysis')}
@@ -81,11 +65,13 @@ function JobAnalysisDetails() {
     )
   }
 
+  const { name, email, totalAnalyses, analyses } = userDetails
+
   return (
     <div className="space-y-6">
       <DetailPageHeader
         title="Job Analysis Details"
-        subtitle={`${user.name} - ${user.email}`}
+        subtitle={`${name} - ${email}`}
         onBack={() => navigate('/job-analysis')}
       />
 
@@ -94,7 +80,7 @@ function JobAnalysisDetails() {
         <SummaryStatCard
           icon={FileSearch}
           label="Total Analyses"
-          value={user.totalAnalyses}
+          value={totalAnalyses}
         />
       </div>
 
@@ -107,9 +93,9 @@ function JobAnalysisDetails() {
           </div>
         </div>
 
-        {user.analyses.length > 0 ? (
+        {analyses.length > 0 ? (
           <div className="space-y-4">
-            {user.analyses.map((analysis) => (
+            {analyses.map((analysis) => (
               <AnalysisCard key={analysis.id} analysis={analysis} type="job" />
             ))}
           </div>

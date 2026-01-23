@@ -1,49 +1,57 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Users, TrendingUp } from 'lucide-react'
 import SummaryCard from '../components/global/SummaryCard'
 import PieChart from '../components/global/PieChart'
 import UserOverviewTable from '../components/user-overview/UserOverviewTable'
-import { mockSubscriptionData, mockOverviewStats } from '../data/mockOverview'
 import { PageSkeleton } from '../components/global/Skeleton'
 import ErrorState from '../components/global/ErrorState'
+import useUserOverviewStore from '../store/userOverviewStore'
 
 function Overview() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  const fetchData = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      // Simulate data fetching
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve()
-        }, 1000)
-      })
-      setIsLoading(false)
-    } catch (err) {
-      setError(err.message || 'An error occurred while loading data')
-      setIsLoading(false)
-    }
-  }
+  const {
+    overviewStats,
+    isLoadingStats,
+    statsError,
+    fetchOverviewStats,
+  } = useUserOverviewStore()
 
   useEffect(() => {
-    fetchData()
+    if (!overviewStats) {
+      fetchOverviewStats(false)
+    }
   }, [])
 
-  if (isLoading) {
+  if (isLoadingStats && !overviewStats) {
     return <PageSkeleton />
   }
 
-  if (error) {
-    return <ErrorState title="Failed to load overview" message={error} onRetry={fetchData} />
+  if (statsError) {
+    return (
+      <ErrorState
+        title="Failed to load overview"
+        message={statsError}
+        onRetry={fetchOverviewStats}
+      />
+    )
   }
 
-  const subscriptionData = mockSubscriptionData
-  const { totalUsers, subscribedUsers } = mockOverviewStats
-  const conversionRate = ((subscribedUsers / totalUsers) * 100).toFixed(1)
+  if (!overviewStats) {
+    return (
+      <ErrorState
+        title="No data available"
+        message="Unable to load overview statistics"
+        onRetry={fetchOverviewStats}
+      />
+    )
+  }
+
+  const { totalUsers, subscribedUsers, nonSubscribedUsers, conversionRate } =
+    overviewStats
+
+  const subscriptionData = [
+    { label: 'Subscribed', value: subscribedUsers, color: '#766EE4' },
+    { label: 'Non-Subscribed', value: nonSubscribedUsers, color: '#9F97FF' },
+  ]
 
   return (
     <div className="space-y-6">

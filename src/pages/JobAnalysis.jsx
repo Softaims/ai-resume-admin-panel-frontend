@@ -1,43 +1,24 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { FileSearch } from 'lucide-react'
 import SummaryCard from '../components/global/SummaryCard'
-import { mockJobAnalysisData, jobAnalysisStats } from '../data/mockJobAnalysis'
 import { SummaryCardSkeleton, TableSkeleton } from '../components/global/Skeleton'
 import JobAnalysisTable from '../components/job-analysis/JobAnalysisTable'
 import ErrorState from '../components/global/ErrorState'
-
-const mockUserData = mockJobAnalysisData
+import useJobAnalysisStore from '../store/jobAnalysisStore'
 
 function JobAnalysis() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  const fetchData = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      // Simulate data fetching
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve()
-        }, 1000)
-      })
-      setIsLoading(false)
-    } catch (err) {
-      setError(err.message || 'An error occurred while loading data')
-      setIsLoading(false)
-    }
-  }
+  const {
+    stats,
+    isLoadingStats,
+    statsError,
+    fetchStats,
+  } = useJobAnalysisStore()
 
   useEffect(() => {
-    fetchData()
+    fetchStats()
   }, [])
 
-  // System-wide metrics from backend (mock data for now)
-  const { totalAnalyses } = jobAnalysisStats
-
-  if (isLoading) {
+  if (isLoadingStats && !stats) {
     return (
       <div className="space-y-6">
         <div>
@@ -52,9 +33,27 @@ function JobAnalysis() {
     )
   }
 
-  if (error) {
-    return <ErrorState title="Failed to load job analysis" message={error} onRetry={fetchData} />
+  if (statsError) {
+    return (
+      <ErrorState
+        title="Failed to load job analysis"
+        message={statsError}
+        onRetry={fetchStats}
+      />
+    )
   }
+
+  if (!stats) {
+    return (
+      <ErrorState
+        title="No data available"
+        message="Unable to load job analysis statistics"
+        onRetry={fetchStats}
+      />
+    )
+  }
+
+  const { totalAnalyses } = stats
 
   return (
     <div className="space-y-6">
@@ -74,7 +73,7 @@ function JobAnalysis() {
       </div>
       
       {/* Job Analysis Per User */}
-      <JobAnalysisTable users={mockUserData} />
+      <JobAnalysisTable />
     </div>
   )
 }

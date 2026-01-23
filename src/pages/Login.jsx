@@ -1,17 +1,50 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { LogIn, Eye, EyeOff, AlertCircle, Mail } from 'lucide-react'
 import { loginSchema } from '../validation/loginValidation'
 import { validateForm } from '../validation/validateForm'
+import api from '../utils/apiConfig'
+import { useUserStore } from '../store/userStore'
 import logo from '../assets/logo.svg'
 
-function Login({ onLogin }) {
+function Login() {
+  const navigate = useNavigate()
+  const { user, setUser } = useUserStore()
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   })
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
-  const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isChecking, setIsChecking] = useState(true)
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    const checkAuth = async () => {
+      // If user exists in store, redirect immediately
+      if (user) {
+        navigate('/dashboard', { replace: true })
+        return
+      }
+
+      const token = localStorage.getItem('adminToken')
+      if (token) {
+        try {
+          const response = await api.get('/admin/me')
+          setUser(response.user || response.data)
+          navigate('/dashboard', { replace: true })
+        } catch {
+          localStorage.removeItem('adminToken')
+          setIsChecking(false)
+        }
+      } else {
+        setIsChecking(false)
+      }
+    }
+
+    checkAuth()
+  }, [user, navigate, setUser])
 
   const handleInputChange = (e) => {
     setFormData({
@@ -23,22 +56,38 @@ function Login({ onLogin }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setErrors({})
-    
-    const fieldErrors = validateForm(loginSchema, formData)
-    if (Object.keys(fieldErrors).length > 0) {
-      setErrors(fieldErrors)
+    const validationErrors = validateForm(loginSchema, formData)
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors)
       return
     }
+    setIsSubmitting(true)
+    try {
+      const response = await api.post("/admin/login", formData)
+      const userData = response.user || response.data?.admin
+      setUser(userData)
+      if (response.data?.token) {
+        localStorage.setItem("adminToken", response.data.token)
+      }
+      navigate("/user-overview", { replace: true })
+    } catch (error) {
+      if (!error || error?.status == 500) {
+        setErrors({ general: "Something went wrong" })
+      } else {
+        setErrors({ general: error.message || "Login failed. Please try again." })
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
-    setIsLoading(true)
-    
-    // Simulate API call
-    setTimeout(() => {
-      // For demo purposes, accept any credentials
-      onLogin()
-      setIsLoading(false)
-    }, 1000)
+  // Show loading state while checking authentication
+  if (isChecking) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    )
   }
 
   return (
@@ -70,6 +119,12 @@ function Login({ onLogin }) {
 
         {/* Main Card */}
         <div className="w-full max-w-md bg-white rounded-lg shadow-sm border border-[#e2e8f0] p-8 mb-4">
+          {errors.general && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center text-red-700 text-sm">
+              <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+              {errors.general}
+            </div>
+          )}
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -145,11 +200,11 @@ function Login({ onLogin }) {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isSubmitting}
               className="w-full bg-gradient-to-r from-[#2F279C] to-[#766EE4] text-white py-2 px-4 rounded-md font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <LogIn className="w-5 h-5" />
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {isSubmitting ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
 

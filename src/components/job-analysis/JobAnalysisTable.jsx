@@ -4,47 +4,52 @@ import { FileSearch } from 'lucide-react'
 import { TableRowSkeleton } from '../global/Skeleton'
 import EmptyState from '../global/EmptyState'
 import ErrorState from '../global/ErrorState'
+import useJobAnalysisStore from '../../store/jobAnalysisStore'
 
-function JobAnalysisTable({ users, itemsPerPage = 10 }) {
+function JobAnalysisTable() {
   const navigate = useNavigate()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [isFiltering, setIsFiltering] = useState(false)
-  const [error, setError] = useState(null)
+  const {
+    users,
+    pagination,
+    search,
+    isLoadingList,
+    listError,
+    fetchList,
+  } = useJobAnalysisStore()
+
+  const [searchTerm, setSearchTerm] = useState(search)
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(search)
+  const [hasMounted, setHasMounted] = useState(false)
 
   useEffect(() => {
-    // Simulate potential error when users prop changes
-    if (users && users.length > 0) {
-      setError(null)
-    } else if (users && users.length === 0) {
-      // Only set error if we explicitly have an empty array (not just loading)
-      // This would be handled by empty state instead
-    }
-  }, [users])
-
-  // Filter users based on search term
-  const filteredUsers = users.filter((user) => {
-    const searchLower = searchTerm.toLowerCase()
-    return (
-      user.name.toLowerCase().includes(searchLower) ||
-      user.email.toLowerCase().includes(searchLower)
-    )
-  })
-
-  // Paginate filtered users
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage)
-
-  // Reset to page 1 when search changes
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value)
-    setCurrentPage(1)
-    setIsFiltering(true)
-    // Simulate API call delay
-    setTimeout(() => {
-      setIsFiltering(false)
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
     }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  useEffect(() => {
+    if (!hasMounted) {
+      setHasMounted(true)
+      if (users.length === 0) {
+        const page = debouncedSearchTerm !== search ? 1 : pagination.currentPage
+        fetchList({ page, search: debouncedSearchTerm }, false)
+      }
+      return
+    }
+
+    const page = debouncedSearchTerm !== search ? 1 : pagination.currentPage
+    fetchList({ page, search: debouncedSearchTerm }, false)
+  }, [pagination.currentPage, debouncedSearchTerm])
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value
+    setSearchTerm(value)
+  }
+
+  const handlePageChange = (page) => {
+    fetchList({ page, search: debouncedSearchTerm })
   }
 
   const handleRowClick = (userId) => {
@@ -88,19 +93,19 @@ function JobAnalysisTable({ users, itemsPerPage = 10 }) {
             </tr>
           </thead>
           <tbody>
-            {error ? (
+            {listError ? (
               <ErrorState
                 title="Failed to load data"
-                message={error}
+                message={listError}
                 colSpan={4}
                 isTableRow={true}
+                onRetry={() => fetchList({ page: pagination.currentPage, search: debouncedSearchTerm })}
               />
-            ) : isFiltering ? (
-              // Show skeleton rows while filtering
-              Array.from({ length: itemsPerPage }).map((_, i) => (
+            ) : isLoadingList && users.length === 0 ? (
+              Array.from({ length: pagination.itemsPerPage-5 }).map((_, i) => (
                 <TableRowSkeleton key={i} cols={4} />
               ))
-            ) : paginatedUsers.length === 0 ? (
+            ) : users.length === 0 ? (
               <EmptyState
                 icon={FileSearch}
                 title="No job analyses found"
@@ -108,10 +113,11 @@ function JobAnalysisTable({ users, itemsPerPage = 10 }) {
                 colSpan={4}
               />
             ) : (
-              paginatedUsers.map((user) => (
+              users.map((user) => (
                 <tr 
                   key={user.userId} 
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => handleRowClick(user.userId)}
                 >
                   <td className="py-3 px-4 text-sm text-gray-900 font-medium">
                     {user.name}
@@ -142,18 +148,18 @@ function JobAnalysisTable({ users, itemsPerPage = 10 }) {
       </div>
 
       {/* Pagination */}
-      {filteredUsers.length > 0 && (
+      {pagination.totalItems > 0 && (
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
           <div className="text-sm text-gray-600">
-            Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, filteredUsers.length)}</span> of{' '}
-            <span className="font-medium">{filteredUsers.length}</span> results
+            Showing <span className="font-medium">{(pagination.currentPage - 1) * pagination.itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)}</span> of{' '}
+            <span className="font-medium">{pagination.totalItems}</span> results
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1}
+              onClick={() => handlePageChange(pagination.currentPage - 1)}
+              disabled={pagination.currentPage === 1}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                currentPage === 1
+                pagination.currentPage === 1
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
               }`}
@@ -161,37 +167,37 @@ function JobAnalysisTable({ users, itemsPerPage = 10 }) {
               Previous
             </button>
             <div className="flex gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => {
                 if (
                   page === 1 ||
-                  page === totalPages ||
-                  (page >= currentPage - 1 && page <= currentPage + 1)
+                  page === pagination.totalPages ||
+                  (page >= pagination.currentPage - 1 && page <= pagination.currentPage + 1)
                 ) {
                   return (
                     <button
                       key={page}
-                      onClick={() => setCurrentPage(page)}
+                      onClick={() => handlePageChange(page)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                        currentPage === page
+                        pagination.currentPage === page
                           ? 'text-white shadow-sm'
                           : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                       }`}
-                      style={currentPage === page ? { background: '#2F279C' } : {}}
+                      style={pagination.currentPage === page ? { background: '#2F279C' } : {}}
                     >
                       {page}
                     </button>
                   )
-                } else if (page === currentPage - 2 || page === currentPage + 2) {
+                } else if (page === pagination.currentPage - 2 || page === pagination.currentPage + 2) {
                   return <span key={page} className="px-2 text-gray-400">...</span>
                 }
                 return null
               })}
             </div>
             <button
-              onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
+              onClick={() => handlePageChange(pagination.currentPage + 1)}
+              disabled={pagination.currentPage === pagination.totalPages}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                currentPage === totalPages
+                pagination.currentPage === pagination.totalPages
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
               }`}

@@ -2,16 +2,16 @@ function MatchRateWidget({ matchRate }) {
   if (!matchRate) return null
 
   // Calculate total sum of all 4 numbers
-  const totalSum = matchRate.searchability.issues + 
-                  matchRate.skills.missing + 
-                  matchRate.formatting.issues + 
-                  matchRate.recruiterTips.tips
-  
+  const totalSum = matchRate.searchability + 
+                  matchRate.skills + 
+                  matchRate.formatting + 
+                  matchRate.recruiterTips
+
   // Calculate individual progress percentages based on each value's proportion of total
-  const searchabilityProgress = totalSum > 0 ? (matchRate.searchability.issues / totalSum) * 100 : 0
-  const skillsProgress = totalSum > 0 ? (matchRate.skills.missing / totalSum) * 100 : 0
-  const formattingProgress = totalSum > 0 ? (matchRate.formatting.issues / totalSum) * 100 : 0
-  const recruiterTipsProgress = totalSum > 0 ? (matchRate.recruiterTips.tips / totalSum) * 100 : 0
+  const searchabilityProgress = totalSum > 0 ? (matchRate.searchability / totalSum) * 100 : 0
+  const skillsProgress = totalSum > 0 ? (matchRate.skills / totalSum) * 100 : 0
+  const formattingProgress = totalSum > 0 ? (matchRate.formatting / totalSum) * 100 : 0
+  const recruiterTipsProgress = totalSum > 0 ? (matchRate.recruiterTips / totalSum) * 100 : 0
 
   return (
     <div className="mt-4 pt-4 border-t border-gray-200">
@@ -29,7 +29,7 @@ function MatchRateWidget({ matchRate }) {
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-gray-600">Searchability</span>
             <span className="text-xs font-semibold text-red-600">
-              {matchRate.searchability.issues} issues
+              {matchRate.searchability} issues
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -48,7 +48,7 @@ function MatchRateWidget({ matchRate }) {
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-gray-600">Skills</span>
             <span className="text-xs font-semibold text-red-600">
-              {matchRate.skills.missing} missing
+              {matchRate.skills} missing
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -67,7 +67,7 @@ function MatchRateWidget({ matchRate }) {
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-gray-600">Formatting</span>
             <span className="text-xs font-semibold text-red-600">
-              {matchRate.formatting.issues} issues
+              {matchRate.formatting} issues
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -86,7 +86,7 @@ function MatchRateWidget({ matchRate }) {
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-gray-600">Recruiter Tips</span>
             <span className="text-xs font-semibold text-gray-600">
-              {matchRate.recruiterTips.tips} tips
+              {matchRate.recruiterTips} tips
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">

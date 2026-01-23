@@ -1,60 +1,48 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FileText, CheckCircle } from 'lucide-react'
-import { mockResumeAnalysisData } from '../data/mockResumeAnalysis'
 import { DetailPageSkeleton } from '../components/global/Skeleton'
 import ErrorState from '../components/global/ErrorState'
 import DetailPageHeader from '../components/detail-pages/DetailPageHeader'
 import SummaryStatCard from '../components/detail-pages/SummaryStatCard'
 import AnalysisCard from '../components/detail-pages/AnalysisCard'
 import BackButton from '../components/detail-pages/BackButton'
-
-const mockUserData = mockResumeAnalysisData
+import useResumeAnalysisStore from '../store/resumeAnalysisStore'
 
 function ResumeAnalysisDetails() {
   const { userId } = useParams()
   const navigate = useNavigate()
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
-  
-  const fetchData = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      // Simulate data fetching
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve()
-        }, 1000)
-      })
-      setIsLoading(false)
-    } catch (err) {
-      setError(err.message || 'An error occurred while loading data')
-      setIsLoading(false)
-    }
-  }
+  const {
+    userDetails,
+    isLoadingDetails,
+    detailsError,
+    fetchUserDetails,
+  } = useResumeAnalysisStore()
   
   useEffect(() => {
-    fetchData()
-  }, [userId])
-  
-  const user = mockUserData.find(u => u.userId === userId)
-  
-  if (isLoading) {
+    if (userId) {
+      fetchUserDetails(userId, false)
+    }
+  }, [userId, fetchUserDetails])
+
+  if (isLoadingDetails && (!userDetails || userDetails.userId !== userId)) {
     return <DetailPageSkeleton />
   }
 
-  if (error) {
+  if (detailsError) {
     return (
       <div className="space-y-6">
         <BackButton onClick={() => navigate('/resume-analysis')} />
-        <ErrorState title="Failed to load details" message={error} onRetry={fetchData} />
+        <ErrorState
+          title="Failed to load details"
+          message={detailsError}
+          onRetry={() => fetchUserDetails(userId)}
+        />
       </div>
     )
   }
   
-  if (!user) {
+  if (!userDetails) {
     return (
       <div className="space-y-6">
         <BackButton onClick={() => navigate('/resume-analysis')} />
@@ -85,7 +73,7 @@ function ResumeAnalysisDetails() {
     <div className="space-y-6">
       <DetailPageHeader
         title="Resume Analysis Details"
-        subtitle={`${user.name} - ${user.email}`}
+        subtitle={`${userDetails.name} - ${userDetails.email}`}
         onBack={() => navigate('/resume-analysis')}
       />
 
@@ -94,12 +82,12 @@ function ResumeAnalysisDetails() {
         <SummaryStatCard
           icon={FileText}
           label="Total Analyses"
-          value={user.totalAnalyses}
+          value={userDetails.totalAnalyses}
         />
         <SummaryStatCard
           icon={CheckCircle}
           label="Optimized"
-          value={user.optimizedGenerated}
+          value={userDetails.optimizedGenerated}
         />
       </div>
 
@@ -112,9 +100,9 @@ function ResumeAnalysisDetails() {
           </div>
         </div>
 
-        {user.analyses.length > 0 ? (
+        {userDetails.analyses && userDetails.analyses.length > 0 ? (
           <div className="space-y-4">
-            {user.analyses.map((analysis) => (
+            {userDetails.analyses.map((analysis) => (
               <AnalysisCard key={analysis.id} analysis={analysis} type="resume" />
             ))}
           </div>

@@ -11,6 +11,7 @@ import {
 import logo from '../../assets/logo.svg'
 
 const menuItems = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { id: 'user-overview', label: 'User Overview', icon: Users, path: '/user-overview' },
   { id: 'resume-analysis', label: 'Resume Analysis', icon: FileText, path: '/resume-analysis' },
   { id: 'job-analysis', label: 'Job Analysis', icon: FileSearch, path: '/job-analysis' },

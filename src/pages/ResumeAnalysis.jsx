@@ -1,43 +1,24 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { FileText, CheckCircle } from 'lucide-react'
 import SummaryCard from '../components/global/SummaryCard'
-import { mockResumeAnalysisData, resumeAnalysisStats } from '../data/mockResumeAnalysis'
 import { SummaryCardSkeleton, TableSkeleton } from '../components/global/Skeleton'
 import ResumeAnalysisTable from '../components/resume-analysis/ResumeAnalysisTable'
 import ErrorState from '../components/global/ErrorState'
-
-const mockUserData = mockResumeAnalysisData
+import useResumeAnalysisStore from '../store/resumeAnalysisStore'
 
 function ResumeAnalysis() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  const fetchData = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      // Simulate data fetching
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve()
-        }, 1000)
-      })
-      setIsLoading(false)
-    } catch (err) {
-      setError(err.message || 'An error occurred while loading data')
-      setIsLoading(false)
-    }
-  }
+  const {
+    stats,
+    isLoadingStats,
+    statsError,
+    fetchStats,
+  } = useResumeAnalysisStore()
 
   useEffect(() => {
-    fetchData()
+    fetchStats()
   }, [])
 
-  // System-wide metrics from backend (mock data for now)
-  const { totalAnalyses, totalOptimized } = resumeAnalysisStats
-
-  if (isLoading) {
+  if (isLoadingStats && !stats) {
     return (
       <div className="space-y-6">
         <div>
@@ -53,9 +34,27 @@ function ResumeAnalysis() {
     )
   }
 
-  if (error) {
-    return <ErrorState title="Failed to load resume analysis" message={error} onRetry={fetchData} />
+  if (statsError) {
+    return (
+      <ErrorState
+        title="Failed to load resume analysis"
+        message={statsError}
+        onRetry={fetchStats}
+      />
+    )
   }
+
+  if (!stats) {
+    return (
+      <ErrorState
+        title="No data available"
+        message="Unable to load resume analysis statistics"
+        onRetry={fetchStats}
+      />
+    )
+  }
+
+  const { totalAnalyses, totalOptimized } = stats
 
   return (
     <div className="space-y-6">
@@ -83,7 +82,7 @@ function ResumeAnalysis() {
       </div>
       
       {/* Resume Analysis Per User */}
-      <ResumeAnalysisTable users={mockUserData} />
+      <ResumeAnalysisTable />
     </div>
   )
 }

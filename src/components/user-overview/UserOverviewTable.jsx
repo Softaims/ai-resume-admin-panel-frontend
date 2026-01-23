@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Calendar, ChevronDown, Users, Search } from 'lucide-react'
-import { mockUserOverviewData } from '../../data/mockUserOverview'
 import { TableSkeleton, TableRowSkeleton } from '../global/Skeleton'
 import EmptyState from '../global/EmptyState'
 import ErrorState from '../global/ErrorState'
-
-const mockUserData = mockUserOverviewData
+import useUserOverviewStore from '../../store/userOverviewStore'
 
 function Pagination({ currentPage, totalPages, onPageChange, totalItems, itemsPerPage }) {
   const startItem = (currentPage - 1) * itemsPerPage + 1
@@ -76,42 +74,90 @@ function Pagination({ currentPage, totalPages, onPageChange, totalItems, itemsPe
 }
 
 function UserOverviewTable() {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [activeTab, setActiveTab] = useState('all')
-  const [timeRange, setTimeRange] = useState('7days')
-  const [monthFilter, setMonthFilter] = useState('')
-  const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false)
-  const [subscriptionFilter, setSubscriptionFilter] = useState('all')
-  const [isSubscriptionDropdownOpen, setIsSubscriptionDropdownOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isFiltering, setIsFiltering] = useState(false)
-  const [error, setError] = useState(null)
-  const itemsPerPage = 10
+  const {
+    users,
+    pagination,
+    filters,
+    isLoadingUsers,
+    usersError,
+    fetchUsers,
+    setFilters,
+  } = useUserOverviewStore()
 
-  const fetchData = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      // Simulate data fetching
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve()
-        }, 800)
-      })
-      setIsLoading(false)
-    } catch (err) {
-      setError(err.message || 'An error occurred while loading data')
-      setIsLoading(false)
-    }
-  }
+  const [searchTerm, setSearchTerm] = useState(filters.search)
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(filters.search)
+  const [activeTab, setActiveTab] = useState(filters.tab)
+  const [timeRange, setTimeRange] = useState(filters.timeRange)
+  const [monthFilter, setMonthFilter] = useState(filters.monthFilter)
+  const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false)
+  const [subscriptionFilter, setSubscriptionFilter] = useState(
+    filters.subscriptionFilter
+  )
+  const [isSubscriptionDropdownOpen, setIsSubscriptionDropdownOpen] =
+    useState(false)
 
   useEffect(() => {
-    fetchData()
+    setSearchTerm(filters.search)
+    setDebouncedSearchTerm(filters.search)
+    setActiveTab(filters.tab)
+    setTimeRange(filters.timeRange)
+    setMonthFilter(filters.monthFilter)
+    setSubscriptionFilter(filters.subscriptionFilter)
+  }, [filters])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  const [hasMounted, setHasMounted] = useState(false)
+  const isInitialMountRef = useRef(true)
+
+  useEffect(() => {
+    setHasMounted(true)
   }, [])
 
-  // Generate month options (last 12 months)
+  useEffect(() => {
+    if (!hasMounted) {
+      return
+    }
+
+    fetchUsers({
+      page: pagination.currentPage,
+      search: filters.search,
+      tab: filters.tab,
+      timeRange: filters.timeRange,
+      monthFilter: filters.monthFilter,
+      subscriptionFilter: filters.subscriptionFilter,
+    }, false)
+    
+    isInitialMountRef.current = false
+  }, [hasMounted])
+
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      return
+    }
+
+    fetchUsers({
+      page: 1,
+      search: debouncedSearchTerm,
+      tab: activeTab,
+      timeRange,
+      monthFilter,
+      subscriptionFilter,
+    }, false)
+  }, [
+    debouncedSearchTerm,
+    activeTab,
+    timeRange,
+    monthFilter,
+    subscriptionFilter,
+  ])
+
   const generateMonthOptions = () => {
     const options = []
     const today = new Date()
@@ -126,160 +172,63 @@ function UserOverviewTable() {
 
   const monthOptions = generateMonthOptions()
 
-  // Filter users based on active tab and time range
-  const getTabFilteredUsers = () => {
-    let filtered = mockUserData
+  const paginatedUsers = users
 
-    if (activeTab === 'new') {
-      // Filter by signup date
-      if (monthFilter) {
-        // Filter by specific month
-        filtered = mockUserData.filter(user => {
-          const userMonth = user.signupDate.substring(0, 7) // Get YYYY-MM
-          return userMonth === monthFilter
-        })
-      } else {
-        // Filter by time range
-        const now = new Date()
-        let filterDate = new Date()
-        
-        if (timeRange === 'yesterday') {
-          filterDate.setDate(now.getDate() - 1)
-          filtered = mockUserData.filter(user => {
-            const signupDate = new Date(user.signupDate)
-            return signupDate.toDateString() === filterDate.toDateString()
-          })
-        } else if (timeRange === '7days') {
-          filterDate.setDate(now.getDate() - 7)
-          filtered = mockUserData.filter(user => new Date(user.signupDate) >= filterDate)
-        } else if (timeRange === '30days') {
-          filterDate.setDate(now.getDate() - 30)
-          filtered = mockUserData.filter(user => new Date(user.signupDate) >= filterDate)
-        }
-      }
-    } else if (activeTab === 'active') {
-      // Filter by last activity date
-      if (monthFilter) {
-        // Filter by specific month
-        filtered = mockUserData.filter(user => {
-          const userMonth = user.lastActivityDate.substring(0, 7) // Get YYYY-MM
-          return userMonth === monthFilter
-        })
-      } else {
-        // Filter by time range
-        const now = new Date()
-        let filterDate = new Date()
-        
-        if (timeRange === 'yesterday') {
-          filterDate.setDate(now.getDate() - 1)
-          filtered = mockUserData.filter(user => {
-            const activityDate = new Date(user.lastActivityDate)
-            return activityDate.toDateString() === filterDate.toDateString()
-          })
-        } else if (timeRange === '7days') {
-          filterDate.setDate(now.getDate() - 7)
-          filtered = mockUserData.filter(user => new Date(user.lastActivityDate) >= filterDate)
-        } else if (timeRange === '30days') {
-          filterDate.setDate(now.getDate() - 30)
-          filtered = mockUserData.filter(user => new Date(user.lastActivityDate) >= filterDate)
-        }
-      }
-    }
-
-    return filtered
-  }
-
-  // Filter users based on search term and subscription status
-  const filteredUsers = getTabFilteredUsers().filter((user) => {
-    const searchLower = searchTerm.toLowerCase()
-    const matchesSearch = (
-      user.name.toLowerCase().includes(searchLower) ||
-      user.email.toLowerCase().includes(searchLower)
-    )
-    
-    // Filter by subscription status
-    const matchesSubscription = subscriptionFilter === 'all' || 
-      (subscriptionFilter === 'subscribed' && user.subscriptionStatus === 'Subscribed') ||
-      (subscriptionFilter === 'non-subscribed' && user.subscriptionStatus === 'Non-Subscribed')
-    
-    return matchesSearch && matchesSubscription
-  })
-
-  // Paginate filtered users
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage)
-
-  // Reset to page 1 when search or tab changes
   const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value)
-    setCurrentPage(1)
-    setIsFiltering(true)
-    // Simulate API call delay
-    setTimeout(() => {
-      setIsFiltering(false)
-    }, 500)
+    const value = e.target.value
+    setSearchTerm(value)
   }
 
   const handleTabChange = (tab) => {
     setActiveTab(tab)
-    setCurrentPage(1)
     setSearchTerm('')
+    setDebouncedSearchTerm('')
     setTimeRange('7days')
     setMonthFilter('')
     setSubscriptionFilter('all')
-    setIsFiltering(true)
-    // Simulate API call delay
-    setTimeout(() => {
-      setIsFiltering(false)
-    }, 500)
   }
 
   const handleSubscriptionFilterChange = (filter) => {
     setSubscriptionFilter(filter)
-    setCurrentPage(1)
     setIsSubscriptionDropdownOpen(false)
-    setIsFiltering(true)
-    // Simulate API call delay
-    setTimeout(() => {
-      setIsFiltering(false)
-    }, 500)
   }
 
   const handleTimeRangeChange = (newTimeRange) => {
     setTimeRange(newTimeRange)
-    setMonthFilter('') // Reset month filter when time range changes
-    setCurrentPage(1)
-    setIsFiltering(true)
-    // Simulate API call delay
-    setTimeout(() => {
-      setIsFiltering(false)
-    }, 500)
+    setMonthFilter('')
   }
 
   const handleMonthFilterChange = (filter) => {
     setMonthFilter(filter)
-    setTimeRange('7days') // Reset time range when month filter changes
-    setCurrentPage(1)
+    setTimeRange('7days')
     setIsMonthDropdownOpen(false)
-    setIsFiltering(true)
-    // Simulate API call delay
-    setTimeout(() => {
-      setIsFiltering(false)
-    }, 500)
   }
 
-  if (isLoading) {
-    return <TableSkeleton rows={10} cols={7} />
+  const handlePageChange = (page) => {
+    fetchUsers({ 
+      page, 
+      tab: activeTab,
+      search: debouncedSearchTerm,
+      timeRange,
+      monthFilter,
+      subscriptionFilter 
+    }, false)
   }
 
-  if (error) {
+  if (usersError) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
         <ErrorState 
           title="Failed to load users" 
-          message={error} 
-          onRetry={fetchData}
+          message={usersError}
+          onRetry={() => fetchUsers({
+            page: pagination.currentPage,
+            search: debouncedSearchTerm,
+            tab: activeTab,
+            timeRange,
+            monthFilter,
+            subscriptionFilter,
+          }, false)}
         />
       </div>
     )
@@ -528,10 +477,9 @@ function UserOverviewTable() {
             </tr>
           </thead>
           <tbody>
-            {isFiltering ? (
-              // Show skeleton rows while filtering
-              Array.from({ length: itemsPerPage }).map((_, i) => (
-                <TableRowSkeleton key={i} cols={7} />
+            {isLoadingUsers ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <TableRowSkeleton key={index} cols={7} />
               ))
             ) : paginatedUsers.length === 0 ? (
               <EmptyState
@@ -584,13 +532,13 @@ function UserOverviewTable() {
       </div>
 
       {/* Pagination */}
-      {filteredUsers.length > 0 && (
+      {pagination.totalItems > 0 && (
         <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          totalItems={filteredUsers.length}
-          itemsPerPage={itemsPerPage}
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          onPageChange={handlePageChange}
+          totalItems={pagination.totalItems}
+          itemsPerPage={pagination.itemsPerPage}
         />
       )}
     </div>

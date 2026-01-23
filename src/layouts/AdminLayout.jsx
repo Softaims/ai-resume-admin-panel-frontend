@@ -9,6 +9,9 @@ function AdminLayout({ onLogout }) {
     const path = location.pathname
     
     // Check if path starts with the base routes (handles detail pages too)
+    if (path.startsWith('/dashboard')) {
+        return 'dashboard'
+    }
     if (path.startsWith('/resume-analysis')) {
         return 'resume-analysis'
     }
@@ -20,7 +23,7 @@ function AdminLayout({ onLogout }) {
     }
     
     // Default fallback
-    return 'user-overview'
+    return 'dashboard'
   }
 
   return (
