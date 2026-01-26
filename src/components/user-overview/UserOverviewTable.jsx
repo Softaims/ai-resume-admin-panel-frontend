@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Calendar, ChevronDown, Users, Search } from 'lucide-react'
+import { Calendar, ChevronDown, Search } from 'lucide-react'
 import { TableSkeleton, TableRowSkeleton } from '../global/Skeleton'
 import EmptyState from '../global/EmptyState'
 import ErrorState from '../global/ErrorState'
@@ -90,11 +90,6 @@ function UserOverviewTable() {
   const [timeRange, setTimeRange] = useState(filters.timeRange)
   const [monthFilter, setMonthFilter] = useState(filters.monthFilter)
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false)
-  const [subscriptionFilter, setSubscriptionFilter] = useState(
-    filters.subscriptionFilter
-  )
-  const [isSubscriptionDropdownOpen, setIsSubscriptionDropdownOpen] =
-    useState(false)
 
   useEffect(() => {
     setSearchTerm(filters.search)
@@ -102,7 +97,6 @@ function UserOverviewTable() {
     setActiveTab(filters.tab)
     setTimeRange(filters.timeRange)
     setMonthFilter(filters.monthFilter)
-    setSubscriptionFilter(filters.subscriptionFilter)
   }, [filters])
 
   useEffect(() => {
@@ -131,7 +125,6 @@ function UserOverviewTable() {
       tab: filters.tab,
       timeRange: filters.timeRange,
       monthFilter: filters.monthFilter,
-      subscriptionFilter: filters.subscriptionFilter,
     }, false)
     
     isInitialMountRef.current = false
@@ -148,14 +141,12 @@ function UserOverviewTable() {
       tab: activeTab,
       timeRange,
       monthFilter,
-      subscriptionFilter,
     }, false)
   }, [
     debouncedSearchTerm,
     activeTab,
     timeRange,
     monthFilter,
-    subscriptionFilter,
   ])
 
   const generateMonthOptions = () => {
@@ -185,12 +176,6 @@ function UserOverviewTable() {
     setDebouncedSearchTerm('')
     setTimeRange('7days')
     setMonthFilter('')
-    setSubscriptionFilter('all')
-  }
-
-  const handleSubscriptionFilterChange = (filter) => {
-    setSubscriptionFilter(filter)
-    setIsSubscriptionDropdownOpen(false)
   }
 
   const handleTimeRangeChange = (newTimeRange) => {
@@ -211,7 +196,6 @@ function UserOverviewTable() {
       search: debouncedSearchTerm,
       timeRange,
       monthFilter,
-      subscriptionFilter 
     }, false)
   }
 
@@ -227,7 +211,6 @@ function UserOverviewTable() {
             tab: activeTab,
             timeRange,
             monthFilter,
-            subscriptionFilter,
           }, false)}
         />
       </div>
@@ -389,64 +372,6 @@ function UserOverviewTable() {
             className="w-80 px-4 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-100 transition-all"
           />
         </div>
-
-        {/* Subscription Filter - Available for all tabs */}
-        <div className="relative">
-          <button
-            onClick={() => setIsSubscriptionDropdownOpen(!isSubscriptionDropdownOpen)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-              subscriptionFilter !== 'all'
-                ? 'text-white shadow-sm'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            style={subscriptionFilter !== 'all' ? { background: '#2F279C' } : {}}
-          >
-            <Users className="w-3 h-3" />
-            {subscriptionFilter === 'all' ? 'All Users' : subscriptionFilter === 'subscribed' ? 'Subscribed' : 'Non-Subscribed'}
-            <ChevronDown className="w-3 h-3" />
-          </button>
-          
-          {isSubscriptionDropdownOpen && (
-            <>
-              {/* Overlay to close dropdown when clicking outside */}
-              <div 
-                className="fixed inset-0 z-10" 
-                onClick={() => setIsSubscriptionDropdownOpen(false)}
-              ></div>
-              
-              <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                <button
-                  onClick={() => handleSubscriptionFilterChange('all')}
-                  className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 cursor-pointer ${
-                    subscriptionFilter === 'all' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                  }`}
-                >
-                  All Users
-                </button>
-                <button
-                  onClick={() => handleSubscriptionFilterChange('subscribed')}
-                  className={`w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer ${
-                    subscriptionFilter === 'subscribed' 
-                      ? 'bg-[#2F279C] text-white hover:bg-[#2F279C]' 
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  Subscribed
-                </button>
-                <button
-                  onClick={() => handleSubscriptionFilterChange('non-subscribed')}
-                  className={`w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer ${
-                    subscriptionFilter === 'non-subscribed' 
-                      ? 'bg-[#2F279C] text-white hover:bg-[#2F279C]' 
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  Non-Subscribed
-                </button>
-              </div>
-            </>
-          )}
-        </div>
       </div>
       
       <div className="overflow-x-auto">
@@ -471,22 +396,19 @@ function UserOverviewTable() {
               <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
                 Job Optimized Resumes
               </th>
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                Subscription Status
-              </th>
             </tr>
           </thead>
           <tbody>
             {isLoadingUsers ? (
               Array.from({ length: 4 }).map((_, index) => (
-                <TableRowSkeleton key={index} cols={7} />
+                <TableRowSkeleton key={index} cols={6} />
               ))
             ) : paginatedUsers.length === 0 ? (
               <EmptyState
                 icon={Search}
                 title="No users found"
                 message="Try adjusting your search or filter criteria to find users."
-                colSpan={7}
+                colSpan={6}
               />
             ) : (
               paginatedUsers.map((user) => (
@@ -512,17 +434,6 @@ function UserOverviewTable() {
                   </td>
                   <td className="py-3 px-4 text-sm text-gray-900">
                     {user.jobOptimized}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
-                        user.subscriptionStatus === 'Subscribed'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-orange-100 text-orange-800'
-                      }`}
-                    >
-                      {user.subscriptionStatus}
-                    </span>
                   </td>
                 </tr>
               ))

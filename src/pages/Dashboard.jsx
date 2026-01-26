@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
-import { Users, FileText, MousePointerClick, UserPlus, ExternalLink, Briefcase, FileSearch, UserCheck } from 'lucide-react'
+import { Users, FileText, MousePointerClick, UserPlus, ExternalLink, Briefcase, FileSearch, UserCheck, BarChart3, FileCheck, TrendingUp } from 'lucide-react'
 import SummaryCard from '../components/global/SummaryCard'
-import { PageSkeleton } from '../components/global/Skeleton'
+import { SummaryCardSkeleton } from '../components/global/Skeleton'
 import ErrorState from '../components/global/ErrorState'
 import useVisitorStore from '../store/visitorStore'
 
@@ -20,7 +20,19 @@ function Dashboard() {
   }, [])
 
   if (isLoading && !stats) {
-    return <PageSkeleton />
+    return (
+      <div className="space-y-6">
+        <div>
+          <div className="h-8 w-64 bg-gray-200 rounded animate-pulse mb-2" />
+          <div className="h-4 w-96 bg-gray-200 rounded animate-pulse" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 11 }).map((_, index) => (
+            <SummaryCardSkeleton key={index} />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   if (error) {
@@ -43,7 +55,7 @@ function Dashboard() {
     )
   }
 
-  const { totalAppVisits, totalGuestResumeAnalysis, fixAtsOrCustomizedClicked, signupButtonClicked, totalSignedUpUsers, totalConsiliariClicks, totalJobAnalyses, averageJobAnalysisPerUser } = stats
+  const { totalAppVisits, totalGuestResumeAnalysis, fixAtsOrCustomizedClicked, signupButtonClicked, totalSignedUpUsers, totalConsiliariClicks, totalJobAnalyses, averageJobAnalysisPerUser, totalResumeAnalyses, averageResumeAnalysisPerUser, conversionRate } = stats
 
   return (
     <div className="space-y-6">
@@ -89,6 +101,13 @@ function Dashboard() {
           iconColor="text-pink-600"
         />
         <SummaryCard
+          icon={TrendingUp}
+          title="Conversion Rate"
+          value={`${conversionRate.toFixed(2)}%`}
+          subtitle="Guest to signed-up users conversion"
+          iconColor="text-emerald-600"
+        />
+        <SummaryCard
           icon={ExternalLink}
           title="Consiliari Clicks"
           value={totalConsiliariClicks.toString()}
@@ -109,6 +128,21 @@ function Dashboard() {
           subtitle="Average job analysis per user"
           iconColor="text-teal-600"
         />
+        <SummaryCard
+          icon={FileCheck}
+          title="Total Resume Analysis"
+          value={totalResumeAnalyses.toString()}
+          subtitle="Total resume analyses in the system"
+          iconColor="text-blue-600"
+        />
+        <SummaryCard
+          icon={BarChart3}
+          title="Avg Resume Analysis"
+          value={averageResumeAnalysisPerUser.toFixed(2)}
+          subtitle="Average resume analysis per user"
+          iconColor="text-violet-600"
+        />
+        
       </div>
     </div>
   )

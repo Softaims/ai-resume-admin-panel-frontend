@@ -22,7 +22,6 @@ const useUserOverviewStore = create((set, get) => ({
     tab: "all",
     timeRange: "7days",
     monthFilter: "",
-    subscriptionFilter: "all",
   },
 
   setFilters: (newFilters) => {
@@ -38,7 +37,6 @@ const useUserOverviewStore = create((set, get) => ({
         tab: "all",
         timeRange: "7days",
         monthFilter: "",
-        subscriptionFilter: "all",
       },
     });
   },
@@ -93,10 +91,6 @@ const useUserOverviewStore = create((set, get) => ({
         params.monthFilter !== undefined
           ? params.monthFilter
           : filters.monthFilter,
-      subscriptionFilter:
-        params.subscriptionFilter !== undefined
-          ? params.subscriptionFilter
-          : filters.subscriptionFilter,
     };
 
     const hasExplicitParams = 
@@ -104,8 +98,7 @@ const useUserOverviewStore = create((set, get) => ({
       params.search !== undefined ||
       params.tab !== undefined ||
       params.timeRange !== undefined ||
-      params.monthFilter !== undefined ||
-      params.subscriptionFilter !== undefined;
+      params.monthFilter !== undefined;
 
     const paramsChanged =
       queryParams.page !== pagination.currentPage ||
@@ -113,7 +106,6 @@ const useUserOverviewStore = create((set, get) => ({
       queryParams.tab !== filters.tab ||
       queryParams.timeRange !== filters.timeRange ||
       queryParams.monthFilter !== filters.monthFilter ||
-      queryParams.subscriptionFilter !== filters.subscriptionFilter ||
       queryParams.limit !== pagination.itemsPerPage;
 
     if (!paramsChanged && !forceRefresh && users.length > 0) {
@@ -136,7 +128,6 @@ const useUserOverviewStore = create((set, get) => ({
         tab: queryParams.tab,
         timeRange: queryParams.timeRange,
         monthFilter: queryParams.monthFilter,
-        subscriptionFilter: queryParams.subscriptionFilter,
       },
       abortController, 
     });
@@ -195,7 +186,6 @@ const useUserOverviewStore = create((set, get) => ({
         tab: "all",
         timeRange: "7days",
         monthFilter: "",
-        subscriptionFilter: "all",
       },
     });
   },
