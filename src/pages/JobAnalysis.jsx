@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { FileSearch } from 'lucide-react'
+import { FileSearch, Briefcase } from 'lucide-react'
 import SummaryCard from '../components/global/SummaryCard'
 import { SummaryCardSkeleton, TableSkeleton } from '../components/global/Skeleton'
 import JobAnalysisTable from '../components/job-analysis/JobAnalysisTable'
@@ -26,6 +26,7 @@ function JobAnalysis() {
           <div className="h-4 w-80 bg-gray-200 rounded animate-pulse" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <SummaryCardSkeleton /> 
           <SummaryCardSkeleton />
         </div>
         <TableSkeleton rows={8} cols={4} />
@@ -53,7 +54,7 @@ function JobAnalysis() {
     )
   }
 
-  const { totalAnalyses } = stats
+  const { totalAnalyses, averageJobAnalysisPerUser } = stats
 
   return (
     <div className="space-y-6">
@@ -69,6 +70,13 @@ function JobAnalysis() {
           value={totalAnalyses.toString()}
           subtitle="System-wide"
           iconColor="text-indigo-600"
+        />
+        <SummaryCard
+          icon={Briefcase}
+          title="Avg Job Analysis"
+          value={averageJobAnalysisPerUser}
+          subtitle="Average job analysis per user"
+          iconColor="text-teal-600"
         />
       </div>
       

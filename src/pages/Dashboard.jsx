@@ -100,13 +100,13 @@ function Dashboard() {
           subtitle="Total registered users"
           iconColor="text-pink-600"
         />
-        <SummaryCard
+        {/* <SummaryCard
           icon={TrendingUp}
           title="Conversion Rate"
           value={`${conversionRate.toFixed(2)}%`}
           subtitle="Guest to signed-up users conversion"
           iconColor="text-emerald-600"
-        />
+        /> */}
         <SummaryCard
           icon={ExternalLink}
           title="Consiliari Clicks"
