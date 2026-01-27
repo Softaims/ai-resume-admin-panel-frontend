@@ -54,7 +54,7 @@ function ResumeAnalysis() {
     )
   }
 
-  const { totalAnalyses, totalOptimized } = stats
+  const { totalAnalyses, averageResumeAnalysisPerUser } = stats
 
   return (
     <div className="space-y-6">
@@ -74,8 +74,8 @@ function ResumeAnalysis() {
         />
         <SummaryCard
           icon={CheckCircle}
-          title="Total Optimized Resumes"
-          value={totalOptimized.toString()}
+          title="Avg Resume Analysis"
+          value={averageResumeAnalysisPerUser.toString()}
           subtitle="System-wide"
           iconColor="text-green-600"
         />
